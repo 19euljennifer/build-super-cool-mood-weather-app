@@ -1,108 +1,71 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { clsx } from "clsx";
-import { Cloud } from "lucide-react";
-import { Mood, WeatherData, AppState } from "../types";
+import { Cloud, MapPin } from "lucide-react";
+import { Mood } from "../types";
 import { MOODS } from "../data/moods";
 import { MoodSelector } from "./MoodSelector";
 import { WeatherDisplay } from "./WeatherDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorMessage } from "./ErrorMessage";
-
-const DEMO_WEATHER: Record<string, WeatherData> = {
-  happy: {
-    temperature: 75,
-    condition: "Sunny",
-    mood_message:
-      "The sky matches your vibe! It's sunny and 75°F — a perfect day to ride this wave of happiness.",
-    recommendation:
-      "Head outside and soak up the good energy — a walk, a picnic, or just people-watching.",
-    icon: "01d",
-    location: "San Francisco, CA",
-    mood: "Happy",
-  },
-  sad: {
-    temperature: 52,
-    condition: "Overcast",
-    mood_message:
-      "It's overcast and 52°F outside. Even grey skies pass — and so will this feeling.",
-    recommendation:
-      "A gentle walk outside can lift your spirits — fresh air is underrated medicine.",
-    icon: "04d",
-    location: "San Francisco, CA",
-    mood: "Sad",
-  },
-  energetic: {
-    temperature: 68,
-    condition: "Partly Cloudy",
-    mood_message:
-      "68°F and partly cloudy — the world is your playground! Channel that energy!",
-    recommendation:
-      "Go for a run, hit the gym, or start that project you've been putting off!",
-    icon: "02d",
-    location: "San Francisco, CA",
-    mood: "Energetic",
-  },
-  calm: {
-    temperature: 62,
-    condition: "Clear",
-    mood_message:
-      "A serene clear day at 62°F. The weather is at peace, just like you.",
-    recommendation:
-      "Find a quiet spot outside — read a book, meditate, or just breathe in the calm.",
-    icon: "01d",
-    location: "San Francisco, CA",
-    mood: "Calm",
-  },
-  anxious: {
-    temperature: 55,
-    condition: "Drizzle",
-    mood_message:
-      "It's drizzle and 55°F. Take a breath — you're safe, and this moment will pass.",
-    recommendation:
-      "Try a quick breathing exercise: 4 counts in, 7 hold, 8 out. You've got this.",
-    icon: "09d",
-    location: "San Francisco, CA",
-    mood: "Anxious",
-  },
-};
+import { useWeatherApi } from "../hooks/useWeatherApi";
 
 export function MoodWeatherApp() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [appState, setAppState] = useState<AppState>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const { weather, appState, errorMessage, fetchWeather } = useWeatherApi();
+  const [locationName, setLocationName] = useState<string | null>(null);
+  const locationRef = useRef<string | undefined>(undefined);
+  const geoRequestedRef = useRef(false);
 
-  const handleMoodSelect = useCallback(async (mood: Mood) => {
-    setSelectedMood(mood);
-    setAppState("loading");
-    setWeather(null);
-    setErrorMessage("");
+  useEffect(() => {
+    if (geoRequestedRef.current) return;
+    geoRequestedRef.current = true;
 
-    // Simulate API call with demo data for frontend-1
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      const data = DEMO_WEATHER[mood.id];
-      if (data) {
-        setWeather(data);
-        setAppState("success");
-      } else {
-        throw new Error("Could not fetch weather data");
-      }
-    } catch {
-      setErrorMessage("Something went wrong. Please try again.");
-      setAppState("error");
-    }
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        locationRef.current = `${latitude},${longitude}`;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county;
+          if (city) setLocationName(city);
+        } catch {
+          // Reverse geocoding failed — we still have lat,lon for the API
+        }
+      },
+      () => {
+        // User denied location — backend will use default
+      },
+      { timeout: 5000, maximumAge: 300000 }
+    );
   }, []);
+
+  const handleMoodSelect = useCallback(
+    (mood: Mood) => {
+      setSelectedMood(mood);
+      fetchWeather(mood.id, locationRef.current);
+    },
+    [fetchWeather]
+  );
 
   const handleRetry = useCallback(() => {
     if (selectedMood) {
-      handleMoodSelect(selectedMood);
+      fetchWeather(selectedMood.id, locationRef.current);
     }
-  }, [selectedMood, handleMoodSelect]);
+  }, [selectedMood, fetchWeather]);
 
-  const bgGradient = selectedMood?.bgGradient ?? "from-slate-700 via-slate-800 to-slate-900";
+  const bgGradient =
+    selectedMood?.bgGradient ?? "from-slate-700 via-slate-800 to-slate-900";
 
   return (
     <div
@@ -147,6 +110,12 @@ export function MoodWeatherApp() {
             Your mood shapes how you experience the weather. Pick your vibe and
             see the sky through your feelings.
           </p>
+          {locationName && (
+            <div className="flex items-center gap-1.5 text-sm text-white/50">
+              <MapPin className="h-3.5 w-3.5" />
+              <span>{locationName}</span>
+            </div>
+          )}
         </header>
 
         {/* Mood Selection */}
@@ -160,7 +129,9 @@ export function MoodWeatherApp() {
         {/* Results Area */}
         <div className="flex w-full flex-col items-center">
           {appState === "loading" && <LoadingSpinner />}
-          {appState === "success" && weather && <WeatherDisplay weather={weather} />}
+          {appState === "success" && weather && (
+            <WeatherDisplay weather={weather} />
+          )}
           {appState === "error" && (
             <ErrorMessage message={errorMessage} onRetry={handleRetry} />
           )}
