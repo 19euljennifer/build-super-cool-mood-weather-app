@@ -15,8 +15,8 @@ test.describe("Mood Weather App - Full User Flow", () => {
       page.getByText("How are you feeling today?")
     ).toBeVisible();
 
-    // 5 mood buttons visible
-    const moodButtons = page.getByRole("button");
+    // 5 mood buttons visible (scoped to mood grid to exclude dev toolbar)
+    const moodButtons = page.locator(".grid").getByRole("button");
     await expect(moodButtons).toHaveCount(5);
 
     // Check each mood label is present
@@ -144,8 +144,8 @@ test.describe("Mood Weather App - Responsive Design", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Verify all mood cards are visible
-    await expect(page.getByRole("button")).toHaveCount(5);
+    // Verify all mood cards are visible (scoped to mood grid)
+    await expect(page.locator(".grid").getByRole("button")).toHaveCount(5);
 
     // Check the grid has 2 columns on mobile (grid-cols-2)
     const grid = page.locator(".grid");
@@ -160,7 +160,7 @@ test.describe("Mood Weather App - Responsive Design", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByRole("button")).toHaveCount(5);
+    await expect(page.locator(".grid").getByRole("button")).toHaveCount(5);
     await expect(page.locator("h1")).toContainText("Mood Weather");
   });
 
