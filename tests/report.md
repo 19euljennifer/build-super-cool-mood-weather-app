@@ -29,6 +29,7 @@
 | #8  | frontend-2: Integrate frontend with backend   | Approved & Merged  |
 | #11 | qa-1: Test API endpoints and mood-weather map | Merged             |
 | #12 | qa-2: End-to-end UI and integration testing   | Merged             |
+| #14 | fix: exclude Playwright E2E tests from Jest   | Merged (closes #13)|
 
 ---
 
@@ -154,9 +155,29 @@
 
 ## Bugs Found
 
-**None.** All acceptance criteria met across all PRs.
+### #13: Jest picks up Playwright E2E test files
+- **Severity:** Low
+- **Impact:** `npm run test:all` (`npx jest`) failed because Jest tried to run Playwright specs
+- **Fix:** Added `testPathIgnorePatterns` to `jest.config.ts` (PR #14, merged)
 
 ---
+
+## How to Run Tests
+
+```bash
+# Unit tests only
+npm run test
+
+# Integration tests (requires running server)
+npm run build && npx next start --port 3099 &
+TEST_BASE_URL=http://localhost:3099 npm run test:integration
+
+# E2E tests (auto-starts server)
+npx playwright test
+
+# All Jest tests (unit + integration, requires server for integration)
+npm run test:all
+```
 
 ## Notes
 
