@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { clsx } from "clsx";
-import { Cloud, MapPin } from "lucide-react";
+import { Cloud, MapPin, Search } from "lucide-react";
 import { Mood } from "../types";
 import { MOODS } from "../data/moods";
 import { MoodSelector } from "./MoodSelector";
@@ -15,6 +15,7 @@ export function MoodWeatherApp() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const { weather, appState, errorMessage, fetchWeather } = useWeatherApi();
   const [locationName, setLocationName] = useState<string | null>(null);
+  const [locationInput, setLocationInput] = useState("");
   const locationRef = useRef<string | undefined>(undefined);
   const geoRequestedRef = useRef(false);
 
@@ -38,7 +39,10 @@ export function MoodWeatherApp() {
             data.address?.town ||
             data.address?.village ||
             data.address?.county;
-          if (city) setLocationName(city);
+          if (city) {
+            setLocationName(city);
+            setLocationInput(city);
+          }
         } catch {
           // Reverse geocoding failed — we still have lat,lon for the API
         }
@@ -49,6 +53,17 @@ export function MoodWeatherApp() {
       { timeout: 5000, maximumAge: 300000 }
     );
   }, []);
+
+  const handleLocationSubmit = useCallback(() => {
+    const trimmed = locationInput.trim();
+    if (trimmed) {
+      locationRef.current = trimmed;
+      setLocationName(trimmed);
+      if (selectedMood) {
+        fetchWeather(selectedMood.id, trimmed);
+      }
+    }
+  }, [locationInput, selectedMood, fetchWeather]);
 
   const handleMoodSelect = useCallback(
     (mood: Mood) => {
@@ -110,12 +125,28 @@ export function MoodWeatherApp() {
             Your mood shapes how you experience the weather. Pick your vibe and
             see the sky through your feelings.
           </p>
-          {locationName && (
-            <div className="flex items-center gap-1.5 text-sm text-white/50">
-              <MapPin className="h-3.5 w-3.5" />
-              <span>{locationName}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
+              <MapPin className="mr-2 h-3.5 w-3.5 text-white/50" />
+              <input
+                type="text"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleLocationSubmit();
+                }}
+                placeholder="Enter a city..."
+                className="w-40 bg-transparent text-sm text-white/80 placeholder-white/30 outline-none"
+              />
+              <button
+                onClick={handleLocationSubmit}
+                className="ml-1 rounded-full p-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+                aria-label="Search location"
+              >
+                <Search className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
+          </div>
         </header>
 
         {/* Mood Selection */}

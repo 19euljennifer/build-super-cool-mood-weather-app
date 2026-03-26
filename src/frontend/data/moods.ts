@@ -7,7 +7,7 @@ export const MOODS: Mood[] = [
     emoji: "😊",
     description: "Feeling joyful and upbeat",
     color: "#f59e0b",
-    bgGradient: "from-amber-400 via-yellow-300 to-orange-400",
+    bgGradient: "from-amber-800 via-yellow-700 to-orange-800",
   },
   {
     id: "sad",
@@ -15,7 +15,7 @@ export const MOODS: Mood[] = [
     emoji: "😢",
     description: "Feeling down or melancholic",
     color: "#6366f1",
-    bgGradient: "from-indigo-500 via-blue-400 to-slate-500",
+    bgGradient: "from-slate-900 via-gray-900 to-blue-950",
   },
   {
     id: "energetic",
@@ -23,7 +23,7 @@ export const MOODS: Mood[] = [
     emoji: "⚡",
     description: "Pumped and full of energy",
     color: "#ef4444",
-    bgGradient: "from-red-500 via-orange-400 to-yellow-500",
+    bgGradient: "from-orange-800 via-red-900 to-rose-800",
   },
   {
     id: "calm",
@@ -31,7 +31,7 @@ export const MOODS: Mood[] = [
     emoji: "🧘",
     description: "Peaceful and relaxed",
     color: "#10b981",
-    bgGradient: "from-emerald-400 via-teal-300 to-cyan-400",
+    bgGradient: "from-teal-950 via-slate-900 to-emerald-950",
   },
   {
     id: "anxious",
@@ -39,6 +39,6 @@ export const MOODS: Mood[] = [
     emoji: "😰",
     description: "Worried or uneasy",
     color: "#8b5cf6",
-    bgGradient: "from-violet-500 via-purple-400 to-fuchsia-500",
+    bgGradient: "from-gray-900 via-stone-900 to-zinc-900",
   },
 ];
